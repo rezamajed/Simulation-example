@@ -1,0 +1,80 @@
+import pmpy
+
+def workProcess(ADPLT,av_pa) :
+    global pallet
+    while True:
+        yield ADPLT.do('adding palet', ADPLT.attr['time'])
+        yield ADPLT.add(av_pa, ADPLT.attr['plus'])
+        # yield ADPLT.add(all_create_pallete, ADPLT.attr['plus'])
+        pallet-=10
+        # if(all_create_pallete.level()==20000):
+        #     break
+        if pallet==0:
+            break
+
+def truck1Process(truckent1,av_pa,delv_pa) :
+    while True:
+        yield truckent1.get(av_pa , truckent1.attr['capacity'])
+        yield truckent1.do('delivery' , truckent1.attr['delivery time'])
+        yield truckent1.add(delv_pa,truckent1.attr['capacity'])
+        yield truckent1.do('return' , truckent1.attr['delivery time'])
+
+def truck2Process(truckent2,av_pa,delv_pa) :
+    while True:           
+        yield truckent2.get(av_pa , truckent2.attr['capacity'])
+        yield truckent2.do('delivery' , truckent2.attr['delivery time'])
+        yield truckent2.add(delv_pa,truckent2.attr['capacity'])
+        yield truckent2.do('return' , truckent2.attr['delivery time'])
+        
+def worker1Process(workerent1,delv_pa) :
+    while True:           
+        yield workerent1.get(delv_pa ,1)
+        yield workerent1.do('install pallet' , workerent1.attr['install_time'])
+        yield workerent1.add(in_pa ,1)
+
+def worker2Process(workerent2,delv_pa) :
+    while True:           
+        yield workerent2.get(delv_pa ,1)
+        yield workerent2.do('install pallet' , workerent2.attr['install_time'])
+        yield workerent2.add(in_pa ,1)
+        
+
+pallet=20000
+
+env=pmpy.Environment()
+
+truckent1=pmpy.Entity(env,'Truck1',print_actions=True)
+truckent1.attr['capacity'] = 450
+truckent1.attr['delivery time']=3600
+
+truckent2=pmpy.Entity(env,'Truck2',print_actions=True)
+truckent2.attr['capacity']=450
+truckent2.attr['delivery time']=3600
+
+ADPLT=pmpy.Entity(env,'pluspallet',print_actions=True)
+ADPLT.attr['plus']=10
+ADPLT.attr['time']=240
+
+workerent1=pmpy.Entity(env,'worker1',print_actions=True)
+workerent1.attr['install_time']=90
+
+workerent2=pmpy.Entity(env,'worker2',print_actions=True)
+workerent2.attr['install_time']=120
+
+av_pa=pmpy.Resource(env,'available_pallet',init=0,capacity=20000)
+all_create_pallete=av_pa=pmpy.Resource(env,'all_pallet',init=0,capacity=20000)
+delv_pa=pmpy.Resource(env,'delivered_pallet',init=0,capacity=20000)
+in_pa=pmpy.Resource(env,'installed_pallet',init=0,capacity=20000)
+
+
+env.process(workProcess(ADPLT,av_pa))
+# env.process(truckProcess(truckent1,truckent2,av_pa,delv_pa))
+env.process(truck1Process(truckent1,av_pa,delv_pa))
+env.process(truck2Process(truckent2,av_pa,delv_pa))
+env.process(worker1Process(workerent1,delv_pa))
+env.process(worker2Process(workerent2,delv_pa))
+
+
+env.run()
+print(' time required to complete the process is:\n (MINUTES)',env.now)
+print(' time required to complete the process is:\n (Hours)',env.now/60)
